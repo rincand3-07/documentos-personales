@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ruta de Trabajos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: agenda de una columna. Panel de publicación (solo quien puede editar), semana con pestañas por día, filtro por técnico, tarjetas por hora de salida. */
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --fg:#12212B; --muted:#586976; --line:#D3DCE3;
+  --accent:#0B6E99; --accent-fg:#FFFFFF; --accent-soft:#DCEBF4;
+  --wa:#1B7F4B; --wa-fg:#FFFFFF;
+  --prev-bg:#DDF0E1; --prev-fg:#1E5A2D;
+  --inst-bg:#DCEAF8; --inst-fg:#17497A;
+  --corr-bg:#FDE4D0; --corr-fg:#8A3A0B;
+  --pend-bg:#FFF1C7; --pend-fg:#6F5500;
+  --repr-bg:#E4E8EB; --repr-fg:#4A5A66;
+  --bad-bg:#FBDADA; --bad-fg:#8C1D1D;
+  --font-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-head:"Space Grotesk","Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1A22; --surface:#17252F; --fg:#E7EEF3; --muted:#9DB0BD; --line:#2A3B47;
+  --accent:#4FB3DE; --accent-fg:#06222F; --accent-soft:#1B3442;
+  --wa:#3DBB77; --wa-fg:#052A16;
+  --prev-bg:#1E3A27; --prev-fg:#9FDDB0;
+  --inst-bg:#1B3350; --inst-fg:#A9CDF2;
+  --corr-bg:#4A2D17; --corr-fg:#F6B98B;
+  --pend-bg:#44381A; --pend-fg:#F2D77A;
+  --repr-bg:#27343E; --repr-fg:#A9BAC6;
+  --bad-bg:#4C2222; --bad-fg:#F6B0B0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A22; --surface:#17252F; --fg:#E7EEF3; --muted:#9DB0BD; --line:#2A3B47;
+  --accent:#4FB3DE; --accent-fg:#06222F; --accent-soft:#1B3442;
+  --wa:#3DBB77; --wa-fg:#052A16;
+  --prev-bg:#1E3A27; --prev-fg:#9FDDB0;
+  --inst-bg:#1B3350; --inst-fg:#A9CDF2;
+  --corr-bg:#4A2D17; --corr-fg:#F6B98B;
+  --pend-bg:#44381A; --pend-fg:#F2D77A;
+  --repr-bg:#27343E; --repr-fg:#A9BAC6;
+  --bad-bg:#4C2222; --bad-fg:#F6B0B0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.navlink{font-weight:600;font-size:14px;text-decoration:none;color:var(--accent);border:1px solid var(--accent);border-radius:10px;padding:8px 12px}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--font-head);font-size:26px;line-height:1.15;margin:0;text-wrap:balance}
+h2{font-family:var(--font-head);font-size:17px;margin:0}
+.sub{color:var(--muted);margin:2px 0 0;font-size:14px}
+.tag{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:999px;background:var(--pend-bg);color:var(--pend-fg);font-size:12px;font-weight:600}
+.tag.ok{background:var(--prev-bg);color:var(--prev-fg)}
+
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.weeknav strong{font-family:var(--font-head);font-size:16px;text-align:center}
+.nav{font:inherit;font-size:18px;line-height:1;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.days{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.day{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 2px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:1px}
+.day .dn{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.day .dd{font-family:var(--font-head);font-size:18px;font-weight:700}
+.day .dc{font-size:11px;color:var(--muted)}
+.day[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.day[aria-pressed="true"] .dn,.day[aria-pressed="true"] .dc{color:var(--accent-fg);opacity:.85}
+.day.today:not([aria-pressed="true"]){border-color:var(--accent)}
+.day:focus-visible,.btn:focus-visible,.nav:focus-visible,select:focus-visible,.map:focus-visible,input[type=file]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bar label,.lbl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;width:100%}
+select{flex:1 1 200px;min-width:0;font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.btn{font:inherit;font-weight:600;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);border-radius:10px;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-block;text-align:center}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:var(--wa-fg)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+.total{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted);padding:0 2px}
+.total b{color:var(--fg);font-variant-numeric:tabular-nums}
+
+.list{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px}
+.time{font-family:var(--font-head);font-weight:700;font-size:22px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.time small{display:block;font:500 11px var(--font-body);color:var(--muted);margin-top:4px;letter-spacing:.05em;text-transform:uppercase}
+.body{min-width:0;display:flex;flex-direction:column;gap:8px}
+.proj{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.name{font-family:var(--font-head);font-size:18px;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.t-Preventivo{background:var(--prev-bg);color:var(--prev-fg)}
+.t-Instalación{background:var(--inst-bg);color:var(--inst-fg)}
+.t-Correctivo{background:var(--corr-bg);color:var(--corr-fg)}
+.t-emerg{background:var(--bad-bg);color:var(--bad-fg)}
+.s-Pendiente{background:var(--pend-bg);color:var(--pend-fg)}
+.s-En\ curso{background:var(--inst-bg);color:var(--inst-fg)}
+.s-Terminado{background:var(--prev-bg);color:var(--prev-fg)}
+.s-Reprogramado{background:var(--repr-bg);color:var(--repr-fg)}
+.aires{background:var(--accent-soft);color:var(--accent)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px}
+dt{color:var(--muted)}
+dd{margin:0;overflow-wrap:anywhere}
+dd.lead{font-weight:600}
+.map{color:var(--accent);font-weight:600;text-decoration:none}
+.map:hover{text-decoration:underline}
+.note{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px 16px;text-align:center;color:var(--muted)}
+.wa-box{display:flex;flex-direction:column;gap:8px}
+textarea{width:100%;min-height:180px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.toast{font-size:13px;color:var(--prev-fg);background:var(--prev-bg);padding:6px 10px;border-radius:8px;align-self:flex-start}
+
+.admin{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.steps li{display:flex;flex-direction:column;gap:8px}
+input[type=file]{font:inherit;font-size:14px;color:var(--fg);max-width:100%}
+.res{font-size:14px;display:flex;flex-direction:column;gap:6px}
+.res .ok{color:var(--prev-fg);background:var(--prev-bg);padding:8px 10px;border-radius:8px}
+.res .warn{color:var(--pend-fg);background:var(--pend-bg);padding:8px 10px;border-radius:8px}
+.res .bad{color:var(--bad-fg);background:var(--bad-bg);padding:8px 10px;border-radius:8px}
+.res ul{margin:4px 0 0;padding-left:18px}
+@media (max-width:420px){.card{grid-template-columns:minmax(0,1fr)}.time small{display:inline;margin-left:6px}}
+@media (prefers-reduced-motion:no-preference){.day,.btn{transition:background .15s,color .15s}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <div class="toprow"><h1>Ruta de Trabajos</h1><a class="navlink" href="cronograma.html">Ver cronograma →</a></div>
+    
+    <span class="tag" id="statusTag" hidden></span>
+  </header>
+
+
+  <div class="weeknav">
+    <button class="nav" id="prevWeek" type="button" aria-label="Semana anterior">‹</button>
+    <strong id="weekTitle"></strong>
+    <button class="nav" id="nextWeek" type="button" aria-label="Semana siguiente">›</button>
+  </div>
+  <nav class="days" id="days" aria-label="Días de la semana"></nav>
+
+  <div class="bar">
+    <label for="who">¿Quién eres?</label>
+    <select id="who"></select>
+  </div>
+
+  <div class="total" id="total"></div>
+  <section class="list" id="list" aria-live="polite"></section>
+
+  <section class="wa-box">
+    <button class="btn ghost" id="copyBtn" type="button">Copiar el día para WhatsApp</button>
+    <span class="toast" id="toast" hidden></span>
+    <textarea id="waText" readonly hidden aria-label="Texto para WhatsApp"></textarea>
+  </section>
+</div>
+
+<script>
+const LONG = ["lunes","martes","miércoles","jueves","viernes","sábado"];
+const SHORT = ["Lun","Mar","Mié","Jue","Vie","Sáb"];
+const MONTHS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseIso = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+function mondayOf(d){ const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function load(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function save(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+function fmtTime(h){ if(!h) return {t:"Hora por definir", ap:""}; const [H,M] = h.split(":").map(Number); return {t:(((H+11)%12)+1)+":"+pad(M), ap:H>=12?"PM":"AM"}; }
+function mapsUrl(dir){ return /^https?:\/\//i.test(dir) ? dir : "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(dir); }
+
+let data = {updated:null, jobs:[]};
+let weekStart = mondayOf(new Date());
+let selDay = iso(weekStart);
+let who = load("ruta-who") || "";
+let pending = null;      // programación leída del Excel, aún sin publicar
+let artifactApi = null;
+const todayIso = iso(new Date());
+
+function weekDays(){ return SHORT.map((n,i) => { const d = addDays(weekStart,i); return {name:n, long:LONG[i], date:d, iso:iso(d)}; }); }
+function jobsFor(day){ return data.jobs.filter(j => j.fecha === day && (!who || j.equipo.includes(who))).sort((a,b)=>(a.hora||"99:99").localeCompare(b.hora||"99:99")); }
+function weekLabelText(){ const e = addDays(weekStart,5); return `Semana del ${weekStart.getDate()} ${MONTHS[weekStart.getMonth()]} al ${e.getDate()} ${MONTHS[e.getMonth()]} ${e.getFullYear()}`; }
+
+function pickWeek(){
+  const dates = data.jobs.map(j => j.fecha).sort();
+  let target = new Date();
+  if (dates.length && !dates.some(d => iso(mondayOf(parseIso(d))) === iso(mondayOf(target)))) {
+    const next = dates.find(d => d >= todayIso);
+    target = parseIso(next || dates[dates.length-1]);
+  }
+  weekStart = mondayOf(target);
+  const days = weekDays();
+  selDay = (days.find(d => d.iso === todayIso) || days.find(d => data.jobs.some(j => j.fecha === d.iso)) || days[0]).iso;
+}
+
+function fillWho(){
+  const techs = [...new Set(data.jobs.flatMap(j => j.equipo))].sort((a,b)=>a.localeCompare(b,"es",{numeric:true}));
+  $("who").innerHTML = '<option value="">Todo el equipo</option>' + techs.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+  if (!techs.includes(who)) who = "";
+  $("who").value = who;
+}
+
+function renderStatus(){
+  const t = $("statusTag");
+  if (data.updated) {
+    const d = new Date(data.updated), ft = fmtTime(pad(d.getHours())+":"+pad(d.getMinutes()));
+    t.hidden = false; t.className = "tag ok";
+    t.textContent = `Actualizado ${d.getDate()} ${MONTHS[d.getMonth()]}, ${ft.t} ${ft.ap}`;
+  } else t.hidden = true;
+}
+
+function card(j){
+  const t = fmtTime(j.hora), lead = j.equipo[0], rest = j.equipo.slice(1);
+  const tc = /emerg/i.test(j.tipo) ? "emerg" : j.tipo;
+  return `<article class="card">
+    <div class="time">${t.t} ${t.ap}<small>Salida oficina</small></div>
+    <div class="body">
+      <div><div class="proj">${esc(j.proy)}</div><div class="name">${esc(j.nombre)}</div></div>
+      <div class="row">${j.tipo?`<span class="pill t-${esc(tc)}">${esc(j.tipo)}</span>`:""}${j.aires?`<span class="pill aires">${j.aires} ${j.aires===1?"aire":"aires"}</span>`:""}<span class="pill s-${esc(j.estado)}">${esc(j.estado)}</span></div>
+      <dl>
+        <dt>Encargado</dt><dd class="lead">${esc(lead)}</dd>
+        ${rest.length ? `<dt>Equipo</dt><dd>${rest.map(esc).join(", ")}</dd>` : ""}
+        ${j.veh ? `<dt>Vehículo</dt><dd>${esc(j.veh)}</dd>` : ""}
+        ${j.dir ? `<dt>Destino</dt><dd>${esc(j.dir)} · <a class="map" href="${esc(mapsUrl(j.dir))}" target="_blank" rel="noopener">Abrir mapa</a></dd>` : ""}
+      </dl>
+      ${j.obs ? `<div class="note">${esc(j.obs)}</div>` : ""}
+    </div></article>`;
+}
+
+function render(){
+  const days = weekDays();
+  
+  $("weekTitle").textContent = weekLabelText();
+  $("days").innerHTML = days.map(d => {
+    const n = jobsFor(d.iso).length;
+    return `<button class="day${d.iso===todayIso?" today":""}" type="button" data-d="${d.iso}" aria-pressed="${d.iso===selDay}">
+      <span class="dn">${d.name}</span><span class="dd">${d.date.getDate()}</span><span class="dc">${n} ${n===1?"salida":"salidas"}</span></button>`;
+  }).join("");
+  $("days").querySelectorAll(".day").forEach(b => b.addEventListener("click", () => { selDay = b.dataset.d; render(); }));
+  const list = jobsFor(selDay), d = days.find(x => x.iso === selDay) || days[0];
+  const aires = list.reduce((s,j)=>s+j.aires,0);
+  $("total").innerHTML = `<span>${d.long.charAt(0).toUpperCase()+d.long.slice(1)} ${d.date.getDate()} de ${MONTHS[d.date.getMonth()]}</span><span><b>${list.length}</b> ${list.length===1?"salida":"salidas"} · <b>${aires}</b> aires</span>`;
+  $("list").innerHTML = list.length ? list.map(card).join("")
+    : `<div class="empty">${who ? esc(who)+" no tiene salidas este día." : "No hay salidas programadas este día."}</div>`;
+  $("waText").hidden = true; $("toast").hidden = true;
+}
+
+function shiftWeek(n){
+  weekStart = addDays(weekStart, 7*n);
+  const days = weekDays();
+  selDay = (days.find(d => d.iso === todayIso) || days.find(d => data.jobs.some(j => j.fecha === d.iso)) || days[0]).iso;
+  render();
+}
+$("prevWeek").addEventListener("click", () => shiftWeek(-1));
+$("nextWeek").addEventListener("click", () => shiftWeek(1));
+$("who").addEventListener("change", e => { who = e.target.value; save("ruta-who", who); render(); });
+
+function waMessage(){
+  const d = weekDays().find(x => x.iso === selDay), list = jobsFor(selDay);
+  const head = `*Programación ${d.long} ${d.date.getDate()}/${d.date.getMonth()+1}*` + (who ? ` · ${who}` : "");
+  if (!list.length) return head + "\nSin salidas.";
+  return head + "\n\n" + list.map(j => {
+    const t = fmtTime(j.hora);
+    return [`🕐 *${t.t} ${t.ap}* · ${j.proy} · ${j.nombre}`,
+      `${[j.tipo, j.aires ? j.aires+" "+(j.aires===1?"aire":"aires") : "", j.veh].filter(Boolean).join(" · ")}`,
+      `Encargado: ${j.equipo[0]}` + (j.equipo.length>1 ? ` · Equipo: ${j.equipo.slice(1).join(", ")}` : ""),
+      j.dir ? `📍 ${j.dir}` : "", j.obs ? `Nota: ${j.obs}` : ""].filter(Boolean).join("\n");
+  }).join("\n\n");
+}
+$("copyBtn").addEventListener("click", async () => {
+  const text = waMessage(), ta = $("waText"), t = $("toast");
+  ta.value = text;
+  try { await navigator.clipboard.writeText(text); t.textContent = "Copiado. Pégalo en el grupo de WhatsApp."; t.hidden = false; }
+  catch(e) { ta.hidden = false; ta.focus(); ta.select(); t.textContent = "Selecciona el texto y cópialo."; t.hidden = false; }
+});
+
+const EMBEDDED = {"updated":"2026-11-13T14:33:08.311Z","jobs":[{"fecha":"2026-11-11","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":37,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","RENE FIGUEROA","JONATHAN PINEDA"],"aires":43,"tipo":"Preventivo","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":30,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"","nombre":"LLAMADO DE EMERGENCIA YAMAHA","dir":"ROOSVELT","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":0,"tipo":"Llamado de Emergencia","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"","nombre":"LLAMADO DE EMERGENCIA IGD","dir":"ESCALON","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":0,"tipo":"Llamado de Emergencia","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-11","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-12","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":32,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-12","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":25,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-12","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","RENE FIGUEROA","JONATHAN PINEDA"],"aires":39,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-12","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-12","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"31026022","nombre":"VMT STA TECLA - DIRECCION GRAL DE TRANS. - INSTA MECA Y ELECTRICA DE EQ 1 TON","dir":"VMT SANTA TECLA","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":1,"tipo":"Instalación","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":20,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":27,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":29,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-13","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-14","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":15,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-14","proy":"","nombre":"LLAMADO DE EMERGENCIA YAMAHA","dir":"YAMAHA ROOSVELT Y JUAN PABLO","equipo":["JHONY LOPEZ","DANIEL MIRANDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":4,"tipo":"Preventivo","veh":"2700 AZUL","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-14","proy":"40926005","nombre":"MIREX - MNTTO Y CONSERVACION DE OFI DE AUSUNTOS CONSULARES","dir":"MIRREX, Calle El Pedregal, Blvd. Cancillería, Ciudad Merliot ...","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":1,"tipo":"Instalación","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-14","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-14","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-16","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":15,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-16","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":22,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-16","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","RENE FIGUEROA","JONATHAN PINEDA"],"aires":24,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-16","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-16","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":10,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":17,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","RENE FIGUEROA","JONATHAN PINEDA"],"aires":14,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE SAN MIGUEL","equipo":["CRISTIAN GARCIA"],"aires":10,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-17","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"SAN BENITO, CENTURY TOWER","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":5,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":12,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"VMT SANTA TECLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":4,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"EDIFICIO EX VMT CENTRO DE SAN SALVADOR GERENCIA DE GESTORES DE TRAFICO","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":15,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"GOBERNACION SAN MIGUEL","equipo":["CRISTIAN GARCIA"],"aires":5,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-18","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":7,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"EDIFICIO EX VMT CENTRO DE SAN SALVADOR GERENCIA DE GESTORES DE TRAFICO","equipo":["RENE FIGUEROA","JONATHAN PINEDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":10,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"EDUCACION VIAL","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":4,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21026005","nombre":"MINISTERIO DE OBRAS PUBLICAS Y DE TRANSPORTE","dir":"VMT SAN MIGUEL","equipo":["CRISTIAN GARCIA"],"aires":15,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-19","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-20","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"SAN SALVADOR, CENTRO DE GOBIERNO","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":2,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-20","proy":"21126000","nombre":"GARAN - RUTINA 11 - MANTTO PREVENTIVO EN EXPORT SALVA 2026","dir":"LOURDES, LA LIBERTAD","equipo":["RENE FIGUEROA","JONATHAN PINEDA","SAUL DIMAS"],"aires":9,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-20","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"BASCULA ACAJUTLA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","WILMER RIVERA","ANGEL ALVARENGA"],"aires":1,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"06:00","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-20","proy":"21026005","nombre":"VMT - RUTINA 2 - MANTTO PREVENTIVO A 121 AC NIVEL NACIONAL 2026","dir":"OFICINAS VMT SANTA ANA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","WILMER RIVERA","ANGEL ALVARENGA"],"aires":11,"tipo":"Correctivo","veh":"NISSAN FRONTIER","hora":"06:00","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-20","proy":"31026060","nombre":"PGR AHUACHAPAN - U DE ATN PSICOSOCIAL - SUM DE CONTROL REMOTO","dir":"PGR AHUACHAPAN","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","WILMER RIVERA","ANGEL ALVARENGA"],"aires":1,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"06:00","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-20","proy":"21026005","nombre":"MINISTERIO DE OBRAS PUBLICAS Y DE TRANSPORTE","dir":"VMT SAN MIGUEL","equipo":["CRISTIAN GARCIA"],"aires":7,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-20","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-20","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-21","proy":"","nombre":"INSTALACION 2 AA PISO TECHO 3TON VMT","dir":"SANTA TECLA","equipo":["RENE FIGUEROA","JONATHAN PINEDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":2,"tipo":"Instalación","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-21","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT LA LIBETAD","equipo":["JHONY LOPEZ","DANIEL MIRANDA","WILMER RIVERA","ANGEL ALVARENGA"],"aires":28,"tipo":"Preventivo","veh":"2700 AZUL","hora":"07:00","estado":"Pendiente","obs":"TRABAJARAN TODO EL DIA DE 8:00 A 5:00PM"},{"fecha":"2026-11-21","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-21","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT SUCHITOTO","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":3,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"06:30","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-23","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT LA PALMA CHALATENANGO","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":2,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"06:30","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-23","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT LA LIBETAD","equipo":["JHONY LOPEZ","DANIEL MIRANDA","WILMER RIVERA","ANGEL ALVARENGA"],"aires":18,"tipo":"Preventivo","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"21026005","nombre":"MINISTERIO DE OBRAS PUBLICAS Y DE TRANSPORTE","dir":"EX DIGESTYC","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":2,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"21026005","nombre":"MINISTERIO DE OBRAS PUBLICAS Y DE TRANSPORTE","dir":"BASCULA ZACATECOLUCA","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":1,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"COSTA DEL SOL","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":1,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FSV SAN MIGUEL","equipo":["CRISTIAN GARCIA"],"aires":5,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":"LOS LLEVARA DENIS"},{"fecha":"2026-11-23","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB SANTA ANA","equipo":["JUAN LAINEZ"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-23","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"21126005","nombre":"DLC - RUTINA 8 - MANTTO 2 AA Y 1 CAMARA","dir":"SAN MIGUEL ESTACION DLC","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":3,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT USULUTAN","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":6,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"EL CUCO, SAN MIGUEL","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":4,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"","nombre":"MANTENIMIENTO A EQUIPOS CONSULTUS","dir":"CASTELLANE Y OFICINAS","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":3,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"08:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB LA UNION","equipo":["CRISTIAN GARCIA"],"aires":11,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE SANTA ANA","equipo":["JUAN LAINEZ"],"aires":14,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-24","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"20926007","nombre":"RUTINA 4/6 MANTTO PREVENTIVO - POR CONTRATO 14 EQ PROTECCION CIVIL","dir":"PROTECCION CIVIL SANTA ANA","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":1,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"20926007","nombre":"RUTINA 4/6 MANTTO PREVENTIVO - POR CONTRATO 14 EQ PROTECCION CIVIL","dir":"PROTECCION CIVIL SANTA ANA","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":3,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR LA LIBERTAD","equipo":["JOSUE RIVAS","DIEGO RODRIGUEZ","JHONY LOPEZ","DANIEL MIRANDA"],"aires":11,"tipo":"Preventivo","veh":"2700 AZUL","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SANTA TECLA","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":28,"tipo":"Preventivo","veh":"NISSAN FRONTIER","hora":"07:00","estado":"Pendiente","obs":"LLEVARA DENIS"},{"fecha":"2026-11-25","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR LA UNION","equipo":["CRISTIAN GARCIA"],"aires":15,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE SANTA ANA","equipo":["JUAN LAINEZ"],"aires":7,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-25","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"20926007","nombre":"RUTINA 4/6 MANTTO PREVENTIVO - POR CONTRATO 14 EQ PROTECCION CIVIL","dir":"PROTECCION CIVIL SAN VICENTE","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":4,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"20926007","nombre":"RUTINA 4/6 MANTTO PREVENTIVO - POR CONTRATO 14 EQ PROTECCION CIVIL","dir":"PROTECCION CIVIL USULUTAN","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":1,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SANTA TECLA","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":23,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SOYAPANGO","equipo":["JHONY LOPEZ","DANIEL MIRANDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":16,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR LA UNION","equipo":["CRISTIAN GARCIA"],"aires":7,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FSV SANTA ANA","equipo":["JUAN LAINEZ"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-26","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"20926007","nombre":"RUTINA 4/6 MANTTO PREVENTIVO - POR CONTRATO 14 EQ PROTECCION CIVIL","dir":"PROTECCION CIVIL SAN MIGUEL","equipo":["RENE FIGUEROA","JONATHAN PINEDA"],"aires":5,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SOYAPANGO","equipo":["JHONY LOPEZ","DANIEL MIRANDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":8,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SANTA TECLA","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":18,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB MORAZAN","equipo":["CRISTIAN GARCIA"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB AHUACHAPAN","equipo":["JUAN LAINEZ"],"aires":3,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-27","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-28","proy":"20926006","nombre":"CORSATUR - RUTINA 3- MANTTO PREVENTIVO A NIVEL NACIONAL 2026","dir":"CAT LA LIBETAD","equipo":["JHONY LOPEZ","DANIEL MIRANDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":8,"tipo":"Preventivo","veh":"2700 BLANCO VIEJO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-28","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SANTA TECLA","equipo":["WILMER RIVERA","ANGEL ALVARENGA","RENE FIGUEROA","JONATHAN PINEDA"],"aires":13,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-28","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-28","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR SANTA TECLA","equipo":["WILMER RIVERA","ANGEL ALVARENGA"],"aires":3,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR APOPA","equipo":["JHONY LOPEZ","DANIEL MIRANDA"],"aires":18,"tipo":"Preventivo","veh":"2700 AZUL","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21026005","nombre":"MINISTERIO DE OBRAS PUBLICAS Y DE TRANSPORTE","dir":"SOHO LAS CASCADAS","equipo":["RENE FIGUEROA","JONATHAN PINEDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":10,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB USULUTAN","equipo":["CRISTIAN GARCIA"],"aires":15,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB SONSONATE","equipo":["JUAN LAINEZ"],"aires":7,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"TORRE DE GOBERNACION CENTRO DE GOBIERNO","equipo":["EDWIN VARGAS","DENNIS LONE","CARLOS PEREZ"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-11-30","proy":"21126001","nombre":"FSV - MANTTOS RUTINA 11 - PREVENTIVOS 2026","dir":"FONDO SOCIAL SUCURSAL CENTRO","equipo":["CLAUDIA AGUILLON","ORLANDO MORENO"],"aires":0,"tipo":"Preventivo","veh":"LLEGAR DIRECTO AL PROYECTO","hora":"","estado":"Pendiente","obs":""},{"fecha":"2026-12-01","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR APOPA","equipo":["JHONY LOPEZ","DANIEL MIRANDA","JOSUE RIVAS","DIEGO RODRIGUEZ"],"aires":13,"tipo":"Preventivo","veh":"2700 AZUL","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-01","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR ZACATECOLUCA","equipo":["RENE FIGUEROA","JONATHAN PINEDA","WILMER RIVERA","ANGEL ALVARENGA"],"aires":14,"tipo":"Preventivo","veh":"2700 BLANCO NUEVO","hora":"06:30","estado":"Pendiente","obs":""},{"fecha":"2026-12-01","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB USULUTAN","equipo":["CRISTIAN GARCIA"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-02","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR USULUTAN","equipo":["CRISTIAN GARCIA"],"aires":16,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-03","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR USULUTAN","equipo":["CRISTIAN GARCIA"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-04","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"MIGOB CHALATENANGO","equipo":["CRISTIAN GARCIA"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-07","proy":"21026006","nombre":"PGR -NIVEL NACIONAL - RUTINA 2 - MANTTO PREVENTIVO 2026","dir":"PGR CHALATENANGO","equipo":["CRISTIAN GARCIA"],"aires":8,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-08","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE NEJAPA","equipo":["CRISTIAN GARCIA"],"aires":34,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-09","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE NEJAPA","equipo":["CRISTIAN GARCIA"],"aires":26,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-10","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE NEJAPA","equipo":["CRISTIAN GARCIA"],"aires":18,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""},{"fecha":"2026-12-11","proy":"21126002","nombre":"MIGOBDT PRORROGA ADENDA No.3 - RUTINA 6 - MANTTO PREVENTIVO 2026","dir":"COE NEJAPA","equipo":["CRISTIAN GARCIA"],"aires":10,"tipo":"Preventivo","veh":"","hora":"07:00","estado":"Pendiente","obs":""}]};
+data = EMBEDDED;
+pickWeek(); fillWho(); renderStatus(); render();
+</script>
+
+</body></html>
